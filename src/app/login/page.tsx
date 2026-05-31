@@ -201,6 +201,11 @@ export default function LoginPage() {
             Privacy Policy
           </Link>
         </p>
+        <p className="text-center mt-3">
+          <Link href="/forgot-password" className="text-sm text-purple-600 hover:underline">
+            Forgot your password?
+          </Link>
+        </p>
       </div>
     </div>
   );

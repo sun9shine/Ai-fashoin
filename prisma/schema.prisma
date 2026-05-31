@@ -18,6 +18,7 @@ model User {
   plan          String    @default("free")
   dailyTrials   Int       @default(0)
   lastTrialDate DateTime?
+  stripeCustomerId String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -25,6 +26,8 @@ model User {
   sessions      Session[]
   orders        Order[]
   tryOnHistory  TryOnHistory[]
+  passwordResets PasswordReset[]
+  uploads       Upload[]
 }
 
 model Account {
@@ -63,34 +66,58 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model Product {
-  id          String   @id @default(cuid())
-  name        String
-  nameAr      String?
-  category    String
-  price       Float
-  currency    String   @default("USD")
-  image       String?
-  description String?
-  storeId     String?
-  affiliateUrl String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expires   DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
 
-  store       Store?   @relation(fields: [storeId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Upload {
+  id        String   @id @default(cuid())
+  userId    String
+  filename  String
+  path      String
+  mimetype  String
+  size      Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Product {
+  id           String   @id @default(cuid())
+  name         String
+  nameAr       String?
+  category     String
+  price        Float
+  currency     String   @default("USD")
+  image        String?
+  description  String?
+  descriptionAr String?
+  storeId      String?
+  affiliateUrl String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  store        Store?   @relation(fields: [storeId], references: [id])
   tryOnHistory TryOnHistory[]
 }
 
 model Store {
-  id          String   @id @default(cuid())
-  name        String
-  url         String?
-  logo        String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  name      String
+  url       String?
+  logo      String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
 
-  products    Product[]
+  products  Product[]
 }
 
 model Order {
@@ -123,12 +150,20 @@ model TryOnHistory {
 }
 
 model AppSettings {
-  id              String  @id @default("settings")
-  clothesEnabled  Boolean @default(true)
-  makeupEnabled   Boolean @default(true)
-  hairEnabled     Boolean @default(true)
-  shoesEnabled    Boolean @default(true)
-  adsEnabled      Boolean @default(true)
-  adRemovalPrice  Float   @default(4.99)
-  freeTrialsPerDay Int    @default(5)
+  id               String  @id @default("settings")
+  clothesEnabled   Boolean @default(true)
+  makeupEnabled    Boolean @default(true)
+  hairEnabled      Boolean @default(true)
+  shoesEnabled     Boolean @default(true)
+  adsEnabled       Boolean @default(true)
+  adRemovalPrice   Float   @default(4.99)
+  freeTrialsPerDay Int     @default(5)
+  // SMTP Settings
+  smtpHost         String?
+  smtpPort         Int     @default(587)
+  smtpUser         String?
+  smtpPassword     String?
+  smtpFromEmail    String?
+  smtpFromName     String?
+  smtpSecure       Boolean @default(false)
 }

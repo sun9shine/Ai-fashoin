@@ -11,23 +11,52 @@ export default function ImageUpload() {
   const { t, isRTL } = useTranslation();
   const { uploadedImage, setUploadedImage, isProcessing, setIsProcessing } = useStore();
   const [preview, setPreview] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
+    async (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
-      if (file) {
-        setIsProcessing(true);
-        const reader = new FileReader();
-        reader.onload = () => {
-          const result = reader.result as string;
-          setPreview(result);
-          // Simulate analysis delay
-          setTimeout(() => {
-            setUploadedImage(result);
-            setIsProcessing(false);
-          }, 2000);
+      if (!file) return;
+
+      setUploadError(null);
+      setIsProcessing(true);
+
+      // Show preview immediately
+      const reader = new FileReader();
+      reader.onload = () => {
+        setPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      // Upload to server
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Upload failed');
+        }
+
+        // Use the server URL as the uploaded image
+        setUploadedImage(data.url);
+        setIsProcessing(false);
+      } catch (error: any) {
+        console.error('Upload error:', error);
+        // Fallback: use the base64 preview if server upload fails
+        const base64Reader = new FileReader();
+        base64Reader.onload = () => {
+          setUploadedImage(base64Reader.result as string);
+          setIsProcessing(false);
         };
-        reader.readAsDataURL(file);
+        base64Reader.readAsDataURL(file);
+        setUploadError(error.message);
       }
     },
     [setUploadedImage, setIsProcessing]
@@ -47,6 +76,7 @@ export default function ImageUpload() {
   const clearImage = () => {
     setPreview(null);
     setUploadedImage(null);
+    setUploadError(null);
   };
 
   if (uploadedImage || preview) {
@@ -58,6 +88,7 @@ export default function ImageUpload() {
             alt="Uploaded photo"
             fill
             className="object-cover"
+            unoptimized
           />
           {isProcessing && (
             <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center gap-3">
@@ -77,6 +108,11 @@ export default function ImageUpload() {
             <p className={`text-center mt-4 text-green-600 font-medium ${isRTL ? 'text-right' : ''}`}>
               ✓ {t.upload.ready}
             </p>
+            {uploadError && (
+              <p className="text-center mt-1 text-amber-500 text-xs">
+                (Local mode - server upload unavailable)
+              </p>
+            )}
           </>
         )}
       </div>
