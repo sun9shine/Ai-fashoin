@@ -19,17 +19,7 @@ import {
 
 export default function AdminPanel() {
   const { t, isRTL } = useTranslation();
-  const { features, toggleFeature, isAdmin } = useStore();
-
-  if (!isAdmin) {
-    return (
-      <div className="text-center py-20">
-        <p className="text-gray-500 text-lg">
-          {isRTL ? 'يرجى تفعيل وضع الأدمن للوصول لهذه الصفحة' : 'Please enable Admin Mode to access this page'}
-        </p>
-      </div>
-    );
-  }
+  const { features, toggleFeature } = useStore();
 
   const featureToggles = [
     { key: 'clothes' as const, icon: <Shirt className="w-5 h-5" />, label: t.nav.clothes },
@@ -117,7 +107,7 @@ export default function AdminPanel() {
         <h2 className="text-xl font-bold text-gray-800 mb-4">
           {isRTL ? 'إعدادات الإعلانات' : 'Ad Settings'}
         </h2>
-        <div className={`flex items-center gap-4 ${isRTL ? 'flex-row-reverse' : ''}`}>
+        <div className={`flex items-center gap-4 flex-wrap ${isRTL ? 'flex-row-reverse' : ''}`}>
           <label className="text-gray-600 font-medium">
             {isRTL ? 'سعر إزالة الإعلانات:' : 'Ad removal price:'}
           </label>
